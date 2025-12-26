@@ -1,0 +1,10 @@
+.vscode/
+__pycache__/
+*.pyc
+.env
+data/
+benchmark_cache/
+output/
+rl_output/
+*/wandb/
+Qwen3-4B-Base/*.safetensors

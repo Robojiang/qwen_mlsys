@@ -1,0 +1,35 @@
+hydra:
+  run:
+    dir: /mnt/afs/250010074/qwen/output/${training.run_name}_${now:%Y-%m-%d_%H-%M-%S}
+  job:
+    chdir: true
+
+model:
+  model_name_or_path: "/mnt/afs/250010074/qwen/Qwen3-4B-Base"
+  use_peft: true
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+
+data:
+  train_file: "/mnt/afs/250010074/qwen/benchmark_cache/datasets/allenai___ai2_arc/ARC-Challenge/0.0.0/210d026faf9955653af8916fad021475a3f00453/ai2_arc-train.arrow"
+  max_seq_length: 1024
+  dataset_text_field: "text" # 如果是 ARC 数据集，脚本会自动忽略此字段使用 formatting_func
+
+training:
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 2e-4
+  logging_steps: 10
+  save_strategy: "epoch" # 按 epoch 保存
+  save_total_limit: 3 # 最多保留 3 个 checkpoint，防止占满磁盘
+  num_train_epochs: 3 # ARC 数据集较小，可以多跑几个 epoch
+  report_to: "wandb"
+  run_name: "sft_arc"
+  bf16: true # 如果显卡支持 BF16，建议开启
+  fp16: false
+
+wandb:
+  project: "qwen-finetune"
+  entity: null
