@@ -1,0 +1,3 @@
+Dataset,Metric,Value
+GSM8K,Accuracy,68.08%
+HumanEval,Pass@1,32.93%

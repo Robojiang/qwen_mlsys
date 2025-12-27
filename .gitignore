@@ -8,3 +8,5 @@ output/
 rl_output/
 */wandb/
 Qwen3-4B-Base/*.safetensors
+
+logs/

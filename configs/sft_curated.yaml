@@ -13,20 +13,20 @@ model:
   target_modules: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
 
 data:
-  train_file: "/mnt/afs/250010074/qwen/benchmark_cache/datasets/winogrande/winogrande_xl/0.0.0/01e74176c63542e6b0bcb004dcdea22d94fb67b5/winogrande-train.arrow"
-  max_seq_length: 1024
-  dataset_text_field: "text"
+  train_file: "/mnt/afs/250010074/qwen/data/sft_mixture.jsonl"
+  max_seq_length: 2048 # Increased for CoT and code
+  dataset_text_field: "text" # Not used if formatting_func is provided, but kept for compatibility
 
 training:
-  per_device_train_batch_size: 128
-  gradient_accumulation_steps: 4
+  per_device_train_batch_size: 16 # H100 80GB can handle 16-32 easily for 4B model
+  gradient_accumulation_steps: 1  # 4 GPUs * 16 batch * 1 grad_acc = 64 global batch size
   learning_rate: 2e-4
   logging_steps: 10
   save_strategy: "epoch"
   save_total_limit: 3
-  num_train_epochs: 3
+  num_train_epochs: 2
   report_to: "wandb"
-  run_name: "sft_winogrande"
+  run_name: "sft_curated_mixture"
   bf16: true
   fp16: false
 
