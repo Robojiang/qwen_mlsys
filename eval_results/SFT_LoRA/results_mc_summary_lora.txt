@@ -1,0 +1,63 @@
+Dataset,Accuracy
+HellaSwag,54.04%
+ARC,37.46%
+PIQA,77.04%
+MMLU - abstract_algebra,36.36%
+MMLU - anatomy,42.86%
+MMLU - astronomy,50.00%
+MMLU - business_ethics,54.55%
+MMLU - clinical_knowledge,48.28%
+MMLU - college_biology,25.00%
+MMLU - college_chemistry,37.50%
+MMLU - college_computer_science,18.18%
+MMLU - college_mathematics,36.36%
+MMLU - college_medicine,40.91%
+MMLU - college_physics,18.18%
+MMLU - computer_security,45.45%
+MMLU - conceptual_physics,30.77%
+MMLU - econometrics,66.67%
+MMLU - electrical_engineering,18.75%
+MMLU - elementary_mathematics,68.29%
+MMLU - formal_logic,28.57%
+MMLU - global_facts,40.00%
+MMLU - high_school_biology,34.38%
+MMLU - high_school_chemistry,36.36%
+MMLU - high_school_computer_science,44.44%
+MMLU - high_school_european_history,22.22%
+MMLU - high_school_geography,27.27%
+MMLU - high_school_government_and_politics,38.10%
+MMLU - high_school_macroeconomics,44.19%
+MMLU - high_school_mathematics,48.28%
+MMLU - high_school_microeconomics,34.62%
+MMLU - high_school_physics,52.94%
+MMLU - high_school_psychology,36.67%
+MMLU - high_school_statistics,30.43%
+MMLU - high_school_us_history,54.55%
+MMLU - high_school_world_history,26.92%
+MMLU - human_aging,56.52%
+MMLU - human_sexuality,25.00%
+MMLU - international_law,23.08%
+MMLU - jurisprudence,27.27%
+MMLU - logical_fallacies,27.78%
+MMLU - machine_learning,36.36%
+MMLU - management,36.36%
+MMLU - marketing,60.00%
+MMLU - medical_genetics,54.55%
+MMLU - miscellaneous,46.51%
+MMLU - moral_disputes,36.84%
+MMLU - moral_scenarios,24.00%
+MMLU - nutrition,21.21%
+MMLU - philosophy,38.24%
+MMLU - prehistory,42.86%
+MMLU - professional_accounting,29.03%
+MMLU - professional_law,28.24%
+MMLU - professional_medicine,41.94%
+MMLU - professional_psychology,37.68%
+MMLU - public_relations,33.33%
+MMLU - security_studies,40.74%
+MMLU - sociology,36.36%
+MMLU - us_foreign_policy,0.00%
+MMLU - virology,44.44%
+MMLU - world_religions,63.16%
+CommonsenseQA,33.25%
+Winogrande,68.43%

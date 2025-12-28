@@ -1,0 +1,34 @@
+hydra:
+  run:
+    dir: /mnt/afs/250010074/qwen/rl_output/${training.run_name}_${now:%Y-%m-%d_%H-%M-%S}
+  job:
+    chdir: true
+
+model:
+  model_name_or_path: "/mnt/afs/250010074/qwen/Qwen3-4B-Base"
+  sft_adapter_path: null # Path to SFT adapter if using LoRA from previous stage
+  use_peft: true
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.05
+  target_modules: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+
+data:
+  train_file: "/mnt/afs/250010074/qwen/data/dpo_hellaswag.jsonl"
+
+training:
+  per_device_train_batch_size: 8 # DPO uses more memory, lower batch size
+  gradient_accumulation_steps: 8 # Increase to maintain effective batch size
+  learning_rate: 5e-7 # Lower LR for DPO usually
+  logging_steps: 10
+  save_steps: 100
+  num_train_epochs: 1
+  report_to: "wandb"
+  run_name: "dpo_hellaswag"
+  bf16: true
+  fp16: false
+  beta: 0.1 # DPO beta parameter
+
+wandb:
+  project: "qwen-dpo"
+  entity: null

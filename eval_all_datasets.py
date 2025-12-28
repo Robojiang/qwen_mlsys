@@ -5,13 +5,17 @@ import json
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from datasets import load_dataset
 from tqdm import tqdm
+import os
+import glob
+import torch
+import json
 
 # ================= Configuration =================
-DEBUG = False
+DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
 DEBUG_SAMPLES = 5
 
 # Base Model Path
-BASE_MODEL_PATH = "/mnt/afs/250010074/qwen/Qwen3-4B-Base"
+BASE_MODEL_PATH = os.getenv("MODEL_PATH", "/mnt/afs/250010074/qwen/Qwen3-4B-Base")
 CACHE_ROOT = "/mnt/afs/250010074/qwen/benchmark_cache/datasets"
 
 # Dataset Folder Mappings (Folder Name -> Display Name)
@@ -273,12 +277,30 @@ def main():
         tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_PATH, trust_remote_code=True)
         if tokenizer.pad_token is None:
             tokenizer.pad_token = tokenizer.eos_token
-        model = AutoModelForCausalLM.from_pretrained(
-            BASE_MODEL_PATH, 
-            trust_remote_code=True, 
-            device_map="auto", 
-            torch_dtype=torch.float16
-        )
+        
+        # Check if it's an adapter path (contains adapter_config.json)
+        is_adapter = os.path.exists(os.path.join(BASE_MODEL_PATH, "adapter_config.json"))
+        
+        if is_adapter:
+            print(f"Detected Adapter path. Loading base model Qwen3-4B-Base and merging adapter...")
+            # Hardcoded base model path for now, or could be inferred/configured
+            base_model_path = "/mnt/afs/250010074/qwen/Qwen3-4B-Base" 
+            model = AutoModelForCausalLM.from_pretrained(
+                base_model_path, 
+                trust_remote_code=True, 
+                device_map="auto", 
+                torch_dtype=torch.float16
+            )
+            from peft import PeftModel
+            model = PeftModel.from_pretrained(model, BASE_MODEL_PATH)
+            model = model.merge_and_unload()
+        else:
+            model = AutoModelForCausalLM.from_pretrained(
+                BASE_MODEL_PATH, 
+                trust_remote_code=True, 
+                device_map="auto", 
+                torch_dtype=torch.float16
+            )
         model.eval()
     except Exception as e:
         print(f"❌ Failed to load model: {e}")

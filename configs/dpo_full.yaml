@@ -1,0 +1,29 @@
+hydra:
+  run:
+    dir: /mnt/afs/250010074/qwen/rl_output/${training.run_name}_${now:%Y-%m-%d_%H-%M-%S}
+  job:
+    chdir: true
+
+model:
+  model_name_or_path: "/mnt/afs/250010074/qwen/Qwen3-4B-Base" # This will be overridden by the SFT output path
+  use_peft: false # Disable PEFT for full finetuning
+
+data:
+  train_file: "/mnt/afs/250010074/qwen/data/dpo_hellaswag.jsonl"
+
+training:
+  per_device_train_batch_size: 2 # DPO is very memory intensive
+  gradient_accumulation_steps: 16 # Maintain effective batch size
+  learning_rate: 5e-7 # Very low LR for DPO full finetune
+  logging_steps: 10
+  save_steps: 100
+  num_train_epochs: 1
+  report_to: "wandb"
+  run_name: "dpo_full_finetune"
+  bf16: true
+  fp16: false
+  beta: 0.1
+
+wandb:
+  project: "qwen-dpo-full"
+  entity: null

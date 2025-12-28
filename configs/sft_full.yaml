@@ -1,0 +1,38 @@
+hydra:
+  run:
+    dir: /mnt/afs/250010074/qwen/output/${training.run_name}_${now:%Y-%m-%d_%H-%M-%S}
+  job:
+    chdir: true
+
+model:
+  model_name_or_path: "/mnt/afs/250010074/qwen/Qwen3-4B-Base"
+  use_peft: false # Disable PEFT for full finetuning
+
+data:
+  train_file: "/mnt/afs/250010074/qwen/data/sft_mixture.jsonl"
+  max_seq_length: 2048
+  dataset_text_field: "text"
+
+training:
+  per_device_train_batch_size: 4 # Full finetuning uses much more memory, reduce batch size significantly
+  gradient_accumulation_steps: 8 # Increase grad acc to maintain global batch size (4*8=32)
+  learning_rate: 2e-5 # Lower learning rate for full finetuning (usually 1e-5 to 2e-5)
+  logging_steps: 10
+  save_strategy: "epoch"
+  save_total_limit: 3
+  num_train_epochs: 2
+  report_to: "wandb"
+  run_name: "sft_full_finetune"
+  bf16: true
+  fp16: false
+  fsdp: "full_shard auto_wrap" # Enable FSDP for multi-gpu or memory efficiency if needed, though 4B might fit on H100 without it if batch size is small. 
+  # However, for single H100 80GB, 4B model full finetune might fit. 
+  # 4B params * 2 bytes (bf16) = 8GB model weights. 
+  # Optimizer states (AdamW) = 8GB * 2 = 16GB (or more). 
+  # Gradients = 8GB. 
+  # Activations = depends on seq len and batch size.
+  # Total static ~32GB. With 2048 seq len, it should fit comfortably on 80GB.
+
+wandb:
+  project: "qwen-finetune-full"
+  entity: null

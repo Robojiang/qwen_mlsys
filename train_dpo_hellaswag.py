@@ -4,23 +4,24 @@ from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig, OmegaConf
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from peft import LoraConfig, TaskType
+from peft import LoraConfig, TaskType, PeftModel
 from trl import DPOTrainer, DPOConfig
 from datasets import load_dataset
 import wandb
 
-@hydra.main(version_base=None, config_path="configs", config_name="dpo_piqa")
+@hydra.main(version_base=None, config_path="configs", config_name="dpo_hellaswag")
 def main(cfg: DictConfig):
     print(OmegaConf.to_yaml(cfg))
     
-    wandb.init(
-        project=cfg.wandb.project,
-        entity=cfg.wandb.entity,
-        name=cfg.training.run_name,
-        config=OmegaConf.to_container(cfg, resolve=True)
-    )
+    # Initialize WandB
+    if cfg.wandb.project:
+        os.environ["WANDB_PROJECT"] = cfg.wandb.project
+    if cfg.wandb.entity:
+        os.environ["WANDB_ENTITY"] = cfg.wandb.entity
 
     print(f"Loading model from {cfg.model.model_name_or_path}")
+    
+    # Load Tokenizer
     tokenizer = AutoTokenizer.from_pretrained(
         cfg.model.model_name_or_path, 
         trust_remote_code=True,
@@ -29,6 +30,8 @@ def main(cfg: DictConfig):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
+    # Load Model
+    print(f"Loading base model from {cfg.model.model_name_or_path}")
     model = AutoModelForCausalLM.from_pretrained(
         cfg.model.model_name_or_path,
         trust_remote_code=True,
@@ -36,6 +39,27 @@ def main(cfg: DictConfig):
         device_map="auto"
     )
 
+    # If SFT adapter is provided, load and merge it
+    if cfg.model.get("sft_adapter_path") and os.path.exists(cfg.model.sft_adapter_path):
+        print(f"Loading SFT adapter from {cfg.model.sft_adapter_path}")
+        # We need to load the adapter and merge it to create the new base for DPO
+        # This ensures the reference model (which will be a copy of this) also has the SFT weights
+        model = PeftModel.from_pretrained(model, cfg.model.sft_adapter_path)
+        print("Merging SFT adapter into base model...")
+        model = model.merge_and_unload()
+    
+    # DPO requires a reference model. 
+    # If we don't provide one, DPOTrainer creates a copy.
+    # To save memory, we can use PEFT. The 'model' will be optimized (with LoRA), 
+    # and the reference model is effectively the base model (frozen).
+    # However, strictly speaking, ref_model should be the SFT model.
+    # If we use LoRA for DPO, 'model' is SFT+LoRA_DPO, and 'ref_model' is SFT.
+    # If we load the SFT model as 'model', and add LoRA, then 'model' becomes SFT+LoRA.
+    # The DPOTrainer will treat the underlying model as ref if we don't pass ref_model?
+    # No, DPOTrainer constructs ref_model = deepcopy(model) if ref_model is None.
+    # If we use PEFT, DPOTrainer is smart enough to use the adapter-disabled model as reference?
+    # Actually, with PEFT, we usually don't pass ref_model. The trainer handles it by disabling adapters to get reference logits.
+    
     peft_config = None
     if cfg.model.use_peft:
         target_modules = OmegaConf.to_container(cfg.model.target_modules, resolve=True)
@@ -49,13 +73,10 @@ def main(cfg: DictConfig):
         )
         print("LoRA enabled for DPO.")
 
+    # Load Dataset
     if os.path.exists(cfg.data.train_file):
-        if cfg.data.train_file.endswith(".arrow"):
-            print(f"Loading Arrow dataset from {cfg.data.train_file}")
-            dataset = load_dataset("arrow", data_files={"train": cfg.data.train_file}, split="train")
-        else:
-            print(f"Loading JSON dataset from {cfg.data.train_file}")
-            dataset = load_dataset("json", data_files=cfg.data.train_file, split="train")
+        print(f"Loading dataset from {cfg.data.train_file}")
+        dataset = load_dataset("json", data_files=cfg.data.train_file, split="train")
     else:
         raise FileNotFoundError(f"Data file {cfg.data.train_file} not found.")
 
@@ -68,56 +89,23 @@ def main(cfg: DictConfig):
         gradient_accumulation_steps=cfg.training.gradient_accumulation_steps,
         learning_rate=cfg.training.learning_rate,
         logging_steps=cfg.training.logging_steps,
-        save_steps=cfg.training.save_steps,
+        save_steps=cfg.training.get("save_steps", 100),
         num_train_epochs=cfg.training.num_train_epochs,
+        max_steps=cfg.training.get("max_steps", -1),
         report_to=cfg.training.report_to,
         run_name=cfg.training.run_name,
         bf16=cfg.training.bf16,
         fp16=cfg.training.fp16,
+        beta=cfg.training.beta,
         gradient_checkpointing=True,
         remove_unused_columns=False,
-        beta=cfg.data.beta,
-        max_length=cfg.data.max_seq_length,
-        max_prompt_length=512,
+        max_length=2048,
+        max_prompt_length=1024,
     )
-
-    # PIQA DPO Formatting
-    # PIQA: goal, sol1, sol2, label
-    # Prompt: Question: {goal}\nAnswer:
-    # Chosen: {correct_sol}
-    # Rejected: {wrong_sol}
-    
-    if "goal" in dataset.column_names and "sol1" in dataset.column_names:
-        print("Detected PIQA dataset. Converting to DPO format...")
-        
-        def format_dpo(example):
-            goal = example['goal']
-            sol1 = example['sol1']
-            sol2 = example['sol2']
-            label = example['label'] # 0 or 1
-            
-            prompt = f"Question: {goal}\nAnswer:"
-            
-            if label == 0:
-                chosen = sol1
-                rejected = sol2
-            else:
-                chosen = sol2
-                rejected = sol1
-            
-            return {
-                "prompt": prompt,
-                "chosen": chosen,
-                "rejected": rejected
-            }
-        
-        original_columns = dataset.column_names
-        dataset = dataset.map(format_dpo, remove_columns=original_columns)
-        print(f"Converted dataset size: {len(dataset)}")
 
     trainer = DPOTrainer(
         model=model,
-        ref_model=None,
+        ref_model=None, # Let trainer handle reference model (via PEFT or copy)
         args=training_args,
         train_dataset=dataset,
         processing_class=tokenizer,

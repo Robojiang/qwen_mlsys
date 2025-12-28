@@ -18,8 +18,8 @@ data:
   dataset_text_field: "text" # Not used if formatting_func is provided, but kept for compatibility
 
 training:
-  per_device_train_batch_size: 16 # H100 80GB can handle 16-32 easily for 4B model
-  gradient_accumulation_steps: 1  # 4 GPUs * 16 batch * 1 grad_acc = 64 global batch size
+  per_device_train_batch_size: 16 # Reduced from 32 to avoid OOM/NVML errors
+  gradient_accumulation_steps: 2  # Increased to maintain global batch size of 32
   learning_rate: 2e-4
   logging_steps: 10
   save_strategy: "epoch"
