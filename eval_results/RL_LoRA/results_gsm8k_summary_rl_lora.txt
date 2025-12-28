@@ -1,0 +1,2 @@
+Dataset,Metric,Value
+GSM8K,Accuracy,21.76%
