@@ -23,26 +23,26 @@ echo "Date: $(date)"
 mkdir -p logs
 
 # 1. Run Multiple Choice Tasks (ARC, PIQA, MMLU, etc.)
-echo "----------------------------------------------------------------"
-echo ">>> [1/2] Running Multiple Choice Evaluation (ARC, MMLU, etc.)"
-echo "----------------------------------------------------------------"
-python eval_all_datasets.py > logs/eval_mc_$(date +%Y%m%d_%H%M%S).log 2>&1
-echo "✅ Multiple Choice Evaluation Complete."
-echo "📊 Summary:"
-cat results_mc_summary.txt
+# echo "----------------------------------------------------------------"
+# echo ">>> [1/2] Running Multiple Choice Evaluation (ARC, MMLU, etc.)"
+# echo "----------------------------------------------------------------"
+# python eval_all_datasets.py > logs/eval_mc_$(date +%Y%m%d_%H%M%S).log 2>&1
+# echo "✅ Multiple Choice Evaluation Complete."
+# echo "📊 Summary:"
+# cat results_mc_summary.txt
 
-# 2. Run Generative Tasks (GSM8K, HumanEval)
+# 2. Run Generative Tasks (GSM8K)
 echo "----------------------------------------------------------------"
-echo ">>> [2/2] Running Generative Evaluation (GSM8K, HumanEval)"
+echo ">>> [2/2] Running Generative Evaluation (GSM8K)"
 echo "----------------------------------------------------------------"
-python eval_generative.py > logs/eval_gen_$(date +%Y%m%d_%H%M%S).log 2>&1
+python eval_gsm8k.py > logs/eval_gen_$(date +%Y%m%d_%H%M%S).log 2>&1
 echo "✅ Generative Evaluation Complete."
 echo "📊 Summary:"
-cat results_gen_summary.txt
+cat results_gsm8k_summary.txt
 
 echo "----------------------------------------------------------------"
 echo "🎉 All evaluations finished!"
 echo "📝 Final concise results are saved in:"
 echo "   - results_mc_summary.txt"
-echo "   - results_gen_summary.txt"
+echo "   - results_gsm8k_summary.txt"
 

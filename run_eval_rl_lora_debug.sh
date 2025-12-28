@@ -34,7 +34,7 @@ if [ ! -d "$MODEL_PATH" ]; then
 fi
 
 # Output Directory
-RESULTS_DIR="eval_results/RL_LoRA"
+RESULTS_DIR="eval_results/RL_LoRA11111"
 mkdir -p "$RESULTS_DIR"
 
 # Debug Mode
@@ -49,11 +49,11 @@ echo "========================================================"
 export MODEL_PATH="$MODEL_PATH"
 
 # 1. Run Multiple Choice Evaluation
-echo "----------------------------------------------------------------"
-echo ">>> [1/2] Running Multiple Choice Evaluation (ARC, MMLU, etc.)"
-echo "----------------------------------------------------------------"
-python eval_all_datasets.py
-mv results_mc_summary.txt "${RESULTS_DIR}/results_mc_summary_rl_lora.txt"
+# echo "----------------------------------------------------------------"
+# echo ">>> [1/2] Running Multiple Choice Evaluation (ARC, MMLU, etc.)"
+# echo "----------------------------------------------------------------"
+# python eval_all_datasets.py
+# mv results_mc_summary.txt "${RESULTS_DIR}/results_mc_summary_rl_lora.txt"
 
 # 2. Run GSM8K Evaluation
 echo "----------------------------------------------------------------"
